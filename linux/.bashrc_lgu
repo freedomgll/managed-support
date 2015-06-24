@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Some shortcuts for different directory listings
+alias ll='ls -alF'                            # long list
+alias la='ls -A'                              # all but . and ..
+alias l.='ls -d .* --color=tty'
+alias l='ls -CF'                              #

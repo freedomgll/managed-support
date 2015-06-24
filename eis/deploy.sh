@@ -1,5 +1,68 @@
 #!/bin/bash
 
+function restoreOracle() {
+
+	local DB_USER=LGU_DEV
+	local DB_PWD=EXIGEN
+	local DB_SID=orcl
+	local DB_DUMP=EIS4DUMP_610.DMP
+	local SOURCE_SCHEMA=eis4dump
+
+	if [ $# -eq 5 ]; then
+		DB_USER=$1
+		DB_PWD=$2
+		DB_SID=$3
+		DB_DUMP=$4
+		SOURCE_SCHEMA=$5
+	fi
+	
+	sqlplus "/ as sysdba" <<EOF
+	define DB_USER="$DB_USER";
+	define DB_PWD="$DB_PWD";
+	define DB_SID="$DB_SID";
+	
+	drop user &&DB_USER. cascade;
+	create user &&DB_USER. identified by &&DB_PWD. account unlock;
+	grant connect to &&DB_USER.;
+	grant resource to &&DB_USER.;
+	grant create view to &&DB_USER.;
+	create or replace directory DATA_PUMP_DIR as '$DATA_PUMP_DIR';
+	grant read,write ON DIRECTORY DATA_PUMP_DIR TO &&DB_USER.;
+	grant exp_full_database to &&DB_USER.;
+	grant all privileges to &&DB_USER.;
+	exit;
+EOF
+
+    impdp $DB_USER/$DB_PWD REMAP_SCHEMA=$SOURCE_SCHEMA:$DB_USER directory=DATA_PUMP_DIR dumpfile=$DB_DUMP schemas=$SOURCE_SCHEMA LOGFILE=eis4dump.log
+}
+
+function restore610()
+{
+	restoreOracle "LGU_DEV" "EXIGEN" "orcl" "EIS4DUMP_610.DMP" "eis4dump"
+}
+
+function restore620()
+{
+	restoreOracle "LGU_DEV" "EXIGEN" "orcl" "EIS4DUMP_620.DMP" "eis4dump"
+}
+
+function restoreLGU_DEV()
+{
+	restoreOracle "LGU_DEV" "EXIGEN" "orcl" "LGU_DEV.DMP" "LGU_DEV"
+}
+
+function exportLGU_DEV()
+{
+	local db_name=LGU_DEV
+	local db_password=EXIGEN
+	local db_instance=orcl
+
+	logtime=`date +%Y%m%d%H%M%S`
+
+	expdp ${db_name}/${db_password}@${db_instance} dumpfile=${db_name}_${logtime}.DMP DIRECTORY=DATA_PUMP_DIR SCHEMAS=${db_name}  NOLOGFILE=Y
+	cp -f ${DATA_PUMP_DIR}/${db_name}_${logtime}.DMP ${DATA_PUMP_DIR}/${db_name}.DMP
+}
+
 #get repository jars from http://suzeisci02.exigengroup.com/jenkins/view/EIS-Central
 function getrepozip()
 {
