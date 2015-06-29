@@ -12,6 +12,22 @@ function build() {
 	mvn -f $path/pom.xml clean install -Dapps=main -Ddeploy-db -Dmaven.test.skip=true 
 }
 
+function buildall() {
+	path=.
+	echo $path
+	if [ "$1" != "" ]; then
+		path=$1
+	fi
+
+	for file in $path/*
+	do 
+		if [ -d "$file" ]
+		then 
+		  build $file
+		fi
+	done
+}
+
 #mvn -f $path/pom.xml clean test -Dmaven.test.failure.ignore=true -Dsonar=ut
 function test() {
 	path=.
